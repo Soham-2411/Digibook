@@ -1,6 +1,8 @@
+import 'package:digibook/Navbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hexcolor/hexcolor.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 String newItem;
@@ -58,7 +60,9 @@ class _ShowShoppingListState extends State<ShowShoppingList> {
         resizeToAvoidBottomInset: false,
         backgroundColor: Colors.transparent,
         body: Center(
-            child: Container(
+            child: Stack(
+          children: [
+            Container(
                 height: height - 200,
                 width: width - 30,
                 child: FutureBuilder(
@@ -74,13 +78,16 @@ class _ShowShoppingListState extends State<ShowShoppingList> {
                             ? Container()
                             : Align(
                                 alignment: Alignment.topCenter,
-                                child: Text("Shopping List",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 40,
-                                        fontWeight: FontWeight.bold))),
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 30),
+                                  child: Text("Shopping List",
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 40,
+                                          fontWeight: FontWeight.bold)),
+                                )),
                         Padding(
-                          padding: EdgeInsets.only(top: 50),
+                          padding: EdgeInsets.only(top: 120, left: 20),
                           child: Container(
                             child: ListView.builder(
                               itemCount: shoppingListItems == null
@@ -122,36 +129,56 @@ class _ShowShoppingListState extends State<ShowShoppingList> {
                             ),
                           ),
                         ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Padding(
-                            padding: EdgeInsets.only(bottom: 25, right: 5),
-                            child: ButtonTheme(
-                              height: 50,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    elevation: 8,
-                                    shadowColor: Colors.yellow[900],
-                                    shape: CircleBorder(),
-                                    primary: Colors.orange,
-                                    padding: EdgeInsets.all(15)),
-                                onPressed: () async {
-                                  showAlertDialog(context);
-                                },
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
                       ],
                     );
                   },
                   future: _getData(),
-                ))),
+                )),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 20),
+                child: ButtonTheme(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        shadowColor: Colors.yellow[900],
+                        shape: CircleBorder(),
+                        primary: Colors.orange,
+                        padding: EdgeInsets.all(15)),
+                    onPressed: () async {
+                      showAlertDialog(context);
+                    },
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: 25,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: 28.0, right: 5),
+              child: Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                        size: 25,
+                      ),
+                      onPressed: () async {
+                        showAlertDialogDelete(
+                            context,
+                            "Are you sure you want to delete all the items?",
+                            "Delete Shopping List",
+                            Colors.amber);
+                      })),
+            ),
+          ],
+        )),
       )),
     );
   }
@@ -164,9 +191,11 @@ class _ShowShoppingListState extends State<ShowShoppingList> {
       ),
       onPressed: () {
         setState(() {
-          shoppingListItems.add(newItem);
-          shoppingListItemsBool.add(false);
-          newItem = null;
+          if (newItem != null && newItem != '') {
+            shoppingListItems.add(newItem);
+            shoppingListItemsBool.add(false);
+            newItem = null;
+          }
         });
         print(shoppingListItems);
         _setData();
@@ -177,9 +206,7 @@ class _ShowShoppingListState extends State<ShowShoppingList> {
       textCapitalization: TextCapitalization.sentences,
       style: TextStyle(color: Colors.black),
       onChanged: (value) {
-        setState(() {
-          newItem = value;
-        });
+        newItem = value;
       },
     );
     AlertDialog alert = AlertDialog(
@@ -198,4 +225,58 @@ class _ShowShoppingListState extends State<ShowShoppingList> {
       barrierDismissible: true,
     );
   }
+}
+
+showAlertDialogDelete(
+    BuildContext context, String message, String title, Color color) {
+  // set up the button
+  Widget yesButton = FlatButton(
+    child: Text("Yes",
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    onPressed: () {
+      destroyData();
+      Navigator.pushReplacement(
+          context,
+          PageTransition(
+              child: NavBar(
+                index: 2,
+              ),
+              type: PageTransitionType.fade,
+              duration: Duration(milliseconds: 400)));
+    },
+  );
+  Widget noButton = FlatButton(
+    child: Text("No",
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  );
+  // set up the AlertDialog
+  AlertDialog alert = AlertDialog(
+    backgroundColor: color,
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20))),
+    title: Text(title,
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    content: Text(message,
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    actions: [noButton, yesButton],
+  );
+
+  // show the dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }

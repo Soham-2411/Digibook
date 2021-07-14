@@ -2,6 +2,7 @@ import 'package:digibook/Homepage.dart';
 import 'package:digibook/Navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hexcolor/hexcolor.dart';
 
@@ -22,17 +23,16 @@ List<Color> _tileColors = [
   Colors.pink[100]
 ];
 
+Future<void> destroyData() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  prefs.setStringList('RemindersHeader', ['']);
+  prefs.setStringList('RemindersTime', ['']);
+  prefs.setStringList('RemindersDate', ['']);
+}
+
 class _RemindersPageState extends State<RemindersPage> {
   void initState() {
     super.initState();
-    //destroyData();
-  }
-
-  void destroyData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('RemindersHeader', ['']);
-    prefs.setStringList('RemindersTime', ['']);
-    prefs.setStringList('RemindersDate', ['']);
   }
 
   @override
@@ -56,7 +56,18 @@ class _RemindersPageState extends State<RemindersPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Scaffold(
-                      body: Center(child: CircularProgressIndicator()));
+                      body: Container(
+                          width: width,
+                          height: height,
+                          decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topRight,
+                                  end: Alignment.bottomLeft,
+                                  colors: [
+                                HexColor('#2e1f3c'),
+                                HexColor('#db3d75')
+                              ])),
+                          child: Center(child: CircularProgressIndicator())));
                 } else {
                   return SafeArea(
                     child: (remindersHeader == null)
@@ -78,7 +89,6 @@ class _RemindersPageState extends State<RemindersPage> {
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                       primary: Colors.pink[400],
-                                      elevation: 8,
                                       shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.all(
                                               Radius.circular(15))),
@@ -127,142 +137,171 @@ class _DisplayRemindersState extends State<DisplayReminders> {
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
-    return Column(
+    return Stack(
       children: [
-        Text(
-          "Reminders",
-          style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-              fontSize: width * 0.09),
-        ),
-        SizedBox(
-          height: 20,
-        ),
-        Container(
-          width: width,
-          height: 100,
-          decoration: BoxDecoration(
-              color: Colors.pink[400],
-              borderRadius: BorderRadius.all(Radius.circular(20))),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Text(
-                DateFormat('MMM yyyy').format(_dateTime),
-                style: TextStyle(
-                    fontSize: width * 0.07,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w400),
-              ),
-              Padding(
-                padding: EdgeInsets.only(left: 30, right: 30),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Date",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: width * 0.04,
-                            fontWeight: FontWeight.w400)),
-                    Text(
-                      "Event",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: width * 0.04,
-                          fontWeight: FontWeight.w400),
-                    )
-                  ],
+        Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Colors.white,
+                  size: 25,
                 ),
-              )
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 20,
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: remindersHeader.length - 1,
-            itemBuilder: (BuildContext context, int index) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                onPressed: () async {
+                  // setState(() {
+                  //   destroyData();
+                  // });
+                  showAlertDialogDelete(
+                      context,
+                      "Are you sure you want to delete all the reminders?",
+                      "Delete Reminders",
+                      HexColor('#db3d75'));
+                })),
+        Column(
+          children: [
+            SizedBox(height: 5),
+            Text(
+              "Reminders",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: width * 0.09),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            Container(
+              width: width,
+              height: 100,
+              decoration: BoxDecoration(
+                  color: Colors.pink[400],
+                  borderRadius: BorderRadius.all(Radius.circular(20))),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  SizedBox(
-                    width: 10,
-                  ),
-                  CircleAvatar(
-                    backgroundColor: _tileColors[index % 3],
-                    radius: 8,
-                  ),
-                  SizedBox(
-                    width: 20,
-                  ),
                   Text(
-                    remindersDate[index + 1],
-                    style:
-                        TextStyle(fontSize: width * 0.05, color: Colors.white),
+                    DateFormat('MMM yyyy').format(_dateTime),
+                    style: TextStyle(
+                        fontSize: width * 0.07,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w400),
                   ),
-                  SizedBox(
-                    width: 20,
-                  ),
-                  Container(
-                    width: width / 2 + 50,
-                    height: 90,
-                    child: Card(
-                      elevation: 12,
-                      color: _tileColors[index % 3],
-                      shadowColor: _tileColors[index % 3],
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(15))),
-                      child: Padding(
-                        padding: EdgeInsets.only(left: 20, top: width * 0.04),
-                        child: RichText(
-                          text: TextSpan(children: [
-                            TextSpan(
-                                text: remindersHeader[index + 1] + '\n',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: width * 0.05)),
-                            TextSpan(
-                                text: remindersTime[index + 1] + '\n',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: width * 0.04))
-                          ]),
-                        ),
-                      ),
+                  Padding(
+                    padding: EdgeInsets.only(left: 30, right: 30),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("Date",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: width * 0.04,
+                                fontWeight: FontWeight.w400)),
+                        Text(
+                          "Event",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: width * 0.04,
+                              fontWeight: FontWeight.w400),
+                        )
+                      ],
                     ),
-                  ),
-                  SizedBox(
-                    height: 100,
                   )
                 ],
-              );
-            },
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                primary: Colors.pink[400],
-                elevation: 0,
-                shape: CircleBorder(),
-                padding: EdgeInsets.all(15)),
-            onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => AddReminder()));
-            },
-            child: Icon(
-              Icons.add,
-              color: Colors.white,
+              ),
             ),
-          ),
-        )
+            SizedBox(
+              height: 20,
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: remindersHeader.length - 1,
+                itemBuilder: (BuildContext context, int index) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 10,
+                      ),
+                      CircleAvatar(
+                        backgroundColor: _tileColors[index % 3],
+                        radius: 8,
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Text(
+                        remindersDate[index + 1],
+                        style: TextStyle(
+                            fontSize: width * 0.05, color: Colors.white),
+                      ),
+                      SizedBox(
+                        width: 20,
+                      ),
+                      Container(
+                        width: width / 2 + 50,
+                        height: 90,
+                        child: Card(
+                          elevation: 12,
+                          color: _tileColors[index % 3],
+                          shadowColor: _tileColors[index % 3],
+                          shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(15))),
+                          child: Padding(
+                            padding:
+                                EdgeInsets.only(left: 20, top: width * 0.04),
+                            child: RichText(
+                              text: TextSpan(children: [
+                                TextSpan(
+                                    text: remindersHeader[index + 1] + '\n',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: width * 0.05)),
+                                TextSpan(
+                                    text: remindersTime[index + 1] + '\n',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: width * 0.04))
+                              ]),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        height: 100,
+                      )
+                    ],
+                  );
+                },
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    primary: Colors.pink[400],
+                    elevation: 0,
+                    shape: CircleBorder(),
+                    padding: EdgeInsets.all(15)),
+                onPressed: () {
+                  Navigator.pushReplacement(
+                      context,
+                      PageTransition(
+                          child: AddReminder(),
+                          type: PageTransitionType.fade,
+                          duration: Duration(milliseconds: 400)));
+                },
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
+              ),
+            )
+          ],
+        ),
       ],
     );
   }
@@ -462,8 +501,8 @@ class _AddReminderState extends State<AddReminder> {
                                       index: 3,
                                     )));
                       } else {
-                        showAlertDialog(
-                            context, 'Please fill out all the details');
+                        showAlertDialog(context,
+                            'Please fill out all the details', 'Error');
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -492,22 +531,87 @@ class _AddReminderState extends State<AddReminder> {
   }
 }
 
-showAlertDialog(BuildContext context, String message) {
+showAlertDialog(BuildContext context, String message, String title) {
   // set up the button
   Widget okButton = FlatButton(
-    child: Text("OK"),
+    child: Text("OK",
+        style: TextStyle(
+          color: Colors.white,
+        )),
     onPressed: () {
       Navigator.pop(context);
     },
   );
-
   // set up the AlertDialog
   AlertDialog alert = AlertDialog(
-    title: Text("Error"),
-    content: Text(message),
+    backgroundColor: HexColor('#db3d75'),
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20))),
+    title: Text(title,
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    content: Text(message,
+        style: TextStyle(
+          color: Colors.white,
+        )),
     actions: [
       okButton,
     ],
+  );
+
+  // show the dialog
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
+}
+
+showAlertDialogDelete(
+    BuildContext context, String message, String title, Color color) {
+  // set up the button
+  Widget yesButton = FlatButton(
+    child: Text("Yes",
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    onPressed: () {
+      destroyData();
+      Navigator.pushReplacement(
+          context,
+          PageTransition(
+              child: NavBar(
+                index: 3,
+              ),
+              type: PageTransitionType.fade,
+              duration: Duration(milliseconds: 400)));
+    },
+  );
+  Widget noButton = FlatButton(
+    child: Text("No",
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    onPressed: () {
+      Navigator.pop(context);
+    },
+  );
+  // set up the AlertDialog
+  AlertDialog alert = AlertDialog(
+    backgroundColor: color,
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20))),
+    title: Text(title,
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    content: Text(message,
+        style: TextStyle(
+          color: Colors.white,
+        )),
+    actions: [noButton, yesButton],
   );
 
   // show the dialog
